@@ -1,0 +1,736 @@
+-- Auto queue lại script khi sang server mới
+local queue = queue_on_teleport
+    or (syn and syn.queue_on_teleport)
+    or (fluxus and fluxus.queue_on_teleport)
+
+if Config.AttachNextQueue and queue then
+    queue([[
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/your/repo/main/hehe.lua"))()
+    ]])
+end
+-- ui1
+local Players = game:GetService("Players")
+local p = Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "SquareButtonUI"
+gui.ResetOnSpawn = false
+gui.Parent = p:WaitForChild("PlayerGui")
+
+local nut1 = Instance.new("ImageButton")
+nut1.Image = "rbxassetid://76858538601594"
+nut1.ScaleType = Enum.ScaleType.Fit
+nut1.Size = UDim2.new(0, 120, 0, 120)      -- hình vuông
+nut1.AnchorPoint = Vector2.new(1, 1)
+nut1.Position = UDim2.new(1, -10, 1, -10)  -- góc dưới bên phải, lề 10px
+nut1.BackgroundTransparency = 1            -- nền trong suốt
+nut1.BorderSizePixel = 0                   -- bỏ viền mặc định
+nut1.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)        -- bo góc 12px
+corner.Parent = nut1
+
+-- … phần tạo gui, button, stroke, corner, click …
+
+
+--ui 2
+
+local RunService = game:GetService("RunService")
+
+-- Frame chữ nhật dài, bo góc
+local ui2 = Instance.new("Frame")
+ui2.Size = UDim2.new(0, 400, 0, -180)
+ui2.AnchorPoint = Vector2.new(0.5, 0.5)
+ui2.Position = UDim2.new(0.5, 0, 0.5, -100)
+ui2.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ui2.BackgroundTransparency = 0.69
+ui2.Visible = false
+ui2.Parent = gui  -- hoặc ScreenGui khác
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 14)
+corner.Parent = ui2
+
+-- Viền RGB chạy quanh
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 3
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Parent = ui2
+
+-- Hàm đổi màu theo thời gian (rainbow)
+local hue = 0
+RunService.RenderStepped:Connect(function(dt)
+    hue = (hue + dt * 0.2) % 1  -- tốc độ đổi màu
+    stroke.Color = Color3.fromHSV(hue, 1, 1)
+end)
+
+-- Avatar button trong ui2
+local avatarBtn = Instance.new("ImageButton")
+avatarBtn.Size = UDim2.new(0, 60, 0, 60)
+avatarBtn.Position = UDim2.new(1, -390, 0, 20) -- chỉnh theo bố cục
+avatarBtn.BackgroundTransparency = 1
+avatarBtn.AutoButtonColor = false
+avatarBtn.Parent = ui2
+
+-- Lấy ảnh avatar
+local Players = game:GetService("Players")
+local url, ready = Players:GetUserThumbnailAsync(
+    p.UserId,
+    Enum.ThumbnailType.HeadShot,
+    Enum.ThumbnailSize.Size180x180
+)
+if ready then avatarBtn.Image = url end
+
+-- Copy link profile khi bấm
+avatarBtn.MouseButton1Click:Connect(function()
+    local profileUrl = ("https://www.roblox.com/users/%d/profile"):format(p.UserId)
+    if setclipboard then
+        setclipboard(profileUrl)
+    end
+end)
+
+-- Ngay sau avatarBtn
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Size = UDim2.new(0, 220, 0, 20)
+nameLabel.Position = UDim2.new(0, 80, 0, 20)
+nameLabel.BackgroundTransparency = 1
+nameLabel.Font = Enum.Font.Code
+nameLabel.TextSize = 16
+nameLabel.TextColor3 = Color3.new(1,1,1)
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+nameLabel.Text = string.format("%s (@%s)", p.DisplayName, p.Name)
+nameLabel.Parent = ui2
+
+local statLabel = Instance.new("TextLabel")
+statLabel.Size = UDim2.new(0, 220, 0, 20)
+statLabel.Position = UDim2.new(0, 80, 0, 45) -- dưới nameLabel
+statLabel.BackgroundTransparency = 1
+statLabel.Font = Enum.Font.Code
+statLabel.TextSize = 16
+statLabel.TextColor3 = Color3.new(1,1,1)
+statLabel.TextXAlignment = Enum.TextXAlignment.Left
+statLabel.Text = "FPS: --  Ping: --"
+statLabel.Parent = ui2
+
+local fpsAccum, fpsFrames = 0, 0
+local last = tick()
+local pingItem = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
+
+RunService.RenderStepped:Connect(function()
+    local now = tick()
+    local dt = now - last
+    last = now
+
+    fpsAccum += 1 / math.max(dt, 1e-4)
+    fpsFrames += 1
+
+    -- mỗi 1s cập nhật label
+    if now % 1 < dt then
+        local avgFps = fpsFrames > 0 and fpsAccum / fpsFrames or 0
+        local ping = pingItem and pingItem:GetValue() or 0
+        statLabel.Text = string.format("FPS: %.0f  Ping: %.0f ms", avgFps, ping)
+        fpsAccum, fpsFrames = 0, 0
+    end
+end)
+
+local lowSetBtn = Instance.new("TextButton")
+lowSetBtn.Size = UDim2.new(0, 185, 0, 30)
+lowSetBtn.Position = UDim2.new(1, -390, 0, 90) -- chỉnh lại theo bố cục của bạn
+lowSetBtn.BackgroundColor3 = Color3.fromRGB(80, 140, 80)
+lowSetBtn.TextColor3 = Color3.new(1, 1, 1)
+lowSetBtn.Font = Enum.Font.Code
+lowSetBtn.TextSize = 16
+lowSetBtn.Text = "Low Set"
+lowSetBtn.Parent = ui2
+
+lowSetBtn.MouseButton1Click:Connect(function()
+    local src = game:HttpGet("https://raw.githubusercontent.com/Nsama239/lowset/refs/heads/main/lowset")
+    loadstring(src)()
+end)
+
+local hideBtn = Instance.new("TextButton")
+hideBtn.Size = UDim2.new(0, 185, 0, 30)
+hideBtn.Position = UDim2.new(1, -195, 0, 90) -- chỉnh lại vị trí cho đẹp
+hideBtn.BackgroundColor3 = Color3.fromRGB(120, 80, 80)
+hideBtn.TextColor3 = Color3.new(1,1,1)
+hideBtn.Font = Enum.Font.Code
+hideBtn.TextSize = 16
+hideBtn.Text = "Hide Map: OFF"
+hideBtn.Parent = ui2
+
+-- cache giá trị gốc (weak table để tự GC khi object bị destroy)
+local origT = setmetatable({}, {__mode = "k"})
+local hideOn = false
+local hideConn
+local cacheConn  -- lắng nghe cache baseline
+
+local function cacheBaseline(inst)
+    if (inst:IsA("BasePart") or inst:IsA("Decal") or inst:IsA("Texture")) and origT[inst] == nil then
+        origT[inst] = inst.Transparency
+    end
+end
+
+-- lưu baseline ngay khi khởi tạo UI
+for _, v in ipairs(workspace:GetDescendants()) do
+    pcall(cacheBaseline, v)
+end
+cacheConn = workspace.DescendantAdded:Connect(function(v)
+    pcall(cacheBaseline, v)
+end)
+
+local function setHidden(inst)
+    if inst:IsA("BasePart") or inst:IsA("Decal") or inst:IsA("Texture") then
+        if origT[inst] == nil then
+            origT[inst] = inst.Transparency
+        end
+        inst.Transparency = 1
+    end
+end
+
+local function applyHide()
+    for _, v in ipairs(workspace:GetDescendants()) do pcall(setHidden, v) end
+    if getnilinstances then
+        for _, v in ipairs(getnilinstances()) do
+            pcall(setHidden, v)
+            for _, v1 in ipairs(v:GetDescendants()) do pcall(setHidden, v1) end
+        end
+    end
+    hideConn = workspace.DescendantAdded:Connect(function(v) pcall(setHidden, v) end)
+end
+
+local function revertHide()
+    if hideConn then hideConn:Disconnect(); hideConn = nil end
+    for inst, old in pairs(origT) do pcall(function() inst.Transparency = old end) end
+end
+
+hideBtn.MouseButton1Click:Connect(function()
+    hideOn = not hideOn
+    hideBtn.Text = hideOn and "Hide Map: ON" or "Hide Map: OFF"
+    if hideOn then
+        applyHide()
+        StarterGui:SetCore("SendNotification", {
+            Title = "Hide Map",
+            Text = "Hide Map: ON",
+            Duration = 3,
+        })
+    else
+        revertHide()
+        StarterGui:SetCore("SendNotification", {
+            Title = "Hide Map",
+            Text = "Hide Map: OFF",
+            Duration = 3,
+        })
+    end
+end)
+
+local fpsBox = Instance.new("TextBox")
+fpsBox.Size = UDim2.new(0, 185, 0, 30)
+fpsBox.Position = UDim2.new(1, -390, 0, 130) -- chỉnh lại theo bố cục
+fpsBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+fpsBox.TextColor3 = Color3.new(1, 1, 1)
+fpsBox.Font = Enum.Font.Code
+fpsBox.TextSize = 16
+fpsBox.Text = "240"           -- giá trị mặc định
+fpsBox.PlaceholderText = "FPS"
+fpsBox.Parent = ui2
+
+fpsBox.FocusLost:Connect(function()
+    local n = tonumber(fpsBox.Text)
+    if setfpscap and n and n > 0 then
+        setfpscap(n)
+    else
+        fpsBox.Text = "240"   -- reset nếu nhập sai hoặc không có setfpscap
+    end
+end)
+
+-- Áp dụng fps cap theo Config, đồng thời cập nhật ô nhập
+local function applyInitialFpsCap()
+    if Config and Config.Fpscap and Config.Fpscap > 0 then
+        fpsBox.Text = tostring(Config.Fpscap)
+        if setfpscap then
+            setfpscap(Config.Fpscap)
+        end
+    end
+end
+
+applyInitialFpsCap()
+
+
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local renderOn = true
+
+-- nút trong ui2
+local noRenderBtn = Instance.new("TextButton")
+noRenderBtn.Size = UDim2.new(0, 185, 0, 30)
+noRenderBtn.Position = UDim2.new(1, -195, 0, 130) -- chỉnh lại theo bố cục của bạn
+noRenderBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+noRenderBtn.TextColor3 = Color3.new(1,1,1)
+noRenderBtn.Font = Enum.Font.Code
+noRenderBtn.TextSize = 16
+noRenderBtn.Text = "No Render: OFF"
+noRenderBtn.Parent = ui2
+
+noRenderBtn.MouseButton1Click:Connect(toggleRender)
+
+local function toggleRender()
+    renderOn = not renderOn
+    RS:Set3dRenderingEnabled(renderOn)
+    noRenderBtn.Text = renderOn and "No Render: OFF" or "No Render: ON"
+end
+
+-- phím tắt L cũng gọi toggle
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.L then
+        toggleRender()
+    end
+end)
+
+-- ui3 (ẩn sẵn)
+local ui3 = Instance.new("Frame")
+ui3.Size = UDim2.new(0, 420, 0, 120)
+ui3.AnchorPoint = Vector2.new(0.5, 0.5)
+ui3.Position = UDim2.new(0.5, 0, 0.5, 80) -- lệch dưới ui2 một chút
+ui3.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ui3.BackgroundTransparency = 0.69
+ui3.Visible = false
+ui3.Parent = gui
+ui3.ClipsDescendants = true
+
+local corner3 = Instance.new("UICorner")
+corner3.CornerRadius = UDim.new(0, 14)
+corner3.Parent = ui3
+
+local stroke3 = Instance.new("UIStroke")
+stroke3.Thickness = 3
+stroke3.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke3.Parent = ui3
+
+-- Hàm đổi màu theo thời gian (rainbow)
+local hue = 0
+RunService.RenderStepped:Connect(function(dt)
+    hue = (hue + dt * 0.2) % 1  -- tốc độ đổi màu
+    stroke3.Color = Color3.fromHSV(hue, 1, 1)
+end)
+
+local input = Instance.new("TextBox")
+input.Size = UDim2.new(1, -20, 0, 30)
+input.Position = UDim2.new(0, 10, 0, 40)
+input.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+input.TextColor3 = Color3.new(1, 1, 1)
+input.Text = game.JobId
+input.PlaceholderText = "Enter JobId to join"
+input.Font = Enum.Font.Code
+input.TextSize = 16
+input.Parent = ui3
+
+input.FocusLost:Connect(function()
+    if input.Text == "" then
+        input.Text = game.JobId  -- hoặc chuỗi bạn muốn khôi phục, ví dụ "Nhập JobId muốn join"
+    end
+end)
+
+local joinBtn = Instance.new("TextButton")
+joinBtn.Size = UDim2.new(0, 130, 0, 30)
+joinBtn.Position = UDim2.new(1, -410, 0, 75)
+joinBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+joinBtn.TextColor3 = Color3.new(1, 1, 1)
+joinBtn.Text = "Join"
+joinBtn.Font = Enum.Font.Code
+joinBtn.TextSize = 16
+joinBtn.Parent = ui3
+
+local spamBtn = Instance.new("TextButton")
+spamBtn.Size = UDim2.new(0, 130, 0, 30)
+spamBtn.Position = UDim2.new(1, -275, 0, 75)
+spamBtn.BackgroundColor3 = Color3.fromRGB(150, 80, 80)
+spamBtn.TextColor3 = Color3.new(1, 1, 1)
+spamBtn.Text = "Spam Join"
+spamBtn.Font = Enum.Font.Code
+spamBtn.TextSize = 16
+spamBtn.Parent = ui3
+
+local copyBtn = Instance.new("TextButton")
+copyBtn.Size = UDim2.new(0, 130, 0, 30)
+copyBtn.Position = UDim2.new(1, -140, 0, 75) -- chỉnh lại cho vừa ý
+copyBtn.BackgroundColor3 = Color3.fromRGB(80, 120, 180)
+copyBtn.TextColor3 = Color3.new(1, 1, 1)
+copyBtn.Text = "Copy"
+copyBtn.Font = Enum.Font.Code
+copyBtn.TextSize = 16
+copyBtn.Parent = ui3
+
+-- hộp nhập thời gian spam
+local intervalBox = Instance.new("TextBox")
+intervalBox.Size = UDim2.new(0, 20, 0, 20)
+intervalBox.Position = UDim2.new(1, -170, 0, 80)
+intervalBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+intervalBox.TextColor3 = Color3.new(1, 1, 1)
+intervalBox.PlaceholderText = "S"
+intervalBox.Text = "2"
+intervalBox.Font = Enum.Font.Code
+intervalBox.TextSize = 16
+intervalBox.Parent = ui3
+intervalBox.ZIndex = spamBtn.ZIndex + 1
+
+intervalBox.FocusLost:Connect(function()
+    local n = tonumber(intervalBox.Text)
+    if not n then
+        intervalBox.Text = "2"
+    end
+end)
+-- nút copy jobid từ ô input
+copyBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(input.Text)
+    end
+end)
+-- đặt trước khối spam
+local TeleportService = game:GetService("TeleportService")
+local StarterGui = game:GetService("StarterGui")
+local spamming = false
+local spamThread
+
+local function stopSpam()
+    spamming = false
+    spamBtn.Text = "Spam Join"
+    StarterGui:SetCore("SendNotification", {
+        Title = "Spam Join",
+        Text  = "Stopped",
+        Duration = 3,
+        Button1 = "Okay",
+    })
+end
+
+spamBtn.MouseButton1Click:Connect(function()
+    if spamming then
+        stopSpam()
+        return
+    end
+    spamming = true
+    spamBtn.Text = "Stop Spam"
+    StarterGui:SetCore("SendNotification", {
+        Title = "Spam Join",
+        Text  = "Started Spamming Join",
+        Duration = 3,
+        Button1 = "Okay",
+    })
+    spamThread = coroutine.create(function()
+        while spamming do
+            local targetJob = input.Text:match("%S+")
+            if targetJob and #targetJob > 0 then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, targetJob, p)
+            end
+            local interval = tonumber(intervalBox.Text) or 2
+            task.wait(math.max(interval, 0.1))
+        end
+    end)
+    coroutine.resume(spamThread)
+end)
+-- nút copy jobid (hiển thị jobid)
+local jobButton = Instance.new("TextButton")
+jobButton.Size = UDim2.new(1, -20, 0, 24)
+jobButton.Position = UDim2.new(0, 10, 0, 10)
+jobButton.BackgroundTransparency = 1
+jobButton.TextXAlignment = Enum.TextXAlignment.Center
+jobButton.TextYAlignment = Enum.TextYAlignment.Center
+jobButton.AutoButtonColor = false
+jobButton.Font = Enum.Font.Code
+jobButton.TextSize = 16
+jobButton.TextColor3 = Color3.new(1, 1, 1)
+jobButton.Text = "JobId: " .. game.JobId
+jobButton.Parent = ui3
+-- copy khi bấm (cần hàm setclipboard của executor/Studio plugin)
+jobButton.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(game.JobId)
+    end
+end)
+-- Join logic
+local TeleportService = game:GetService("TeleportService")
+joinBtn.MouseButton1Click:Connect(function()
+    local targetJob = input.Text:match("%S+")
+    if targetJob and #targetJob > 0 then
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, targetJob, p)
+    end
+end)
+-- Tạo blur một lần
+local lighting = game:GetService("Lighting")
+local blur = Instance.new("BlurEffect")
+blur.Size = 0
+blur.Parent = lighting
+
+if Config.EnableUi then
+    ui2.Visible = true
+    ui3.Visible = true
+    if blur then blur.Size = 12 end    -- bật blur khi auto mở UI
+else
+    ui2.Visible = false
+    ui3.Visible = false
+    if blur then blur.Size = 0 end     -- tắt blur khi không mở
+end
+-- áp dụng cấu hình sau khi mọi biến/hàm đã sẵn sàng
+if setfpscap and Config.Fpscap and Config.Fpscap > 0 then
+    setfpscap(Config.Fpscap)
+end
+
+if Config.Lowset then
+    local src = game:HttpGet("https://raw.githubusercontent.com/Nsama239/lowset/refs/heads/main/lowset")
+    loadstring(src)()
+end
+
+if Config.Hidemap then
+    hideOn = true
+    hideBtn.Text = "Hide: ON"
+    applyHide()
+end
+
+if Config.Norender then
+    renderOn = false
+    RS:Set3dRenderingEnabled(false)
+    noRenderBtn.Text = "No Render: ON"
+end
+
+if Config.EnableUi then
+    ui2.Visible = true
+    ui3.Visible = true
+else
+    ui2.Visible = false
+    ui3.Visible = false
+end
+
+
+--- Kéo thả nút
+
+local UIS = game:GetService("UserInputService")
+nut1.Active = true
+nut1.Selectable = true
+local dragging = false
+local dragStart, startPos
+local dragInput
+local clickThreshold = 10  -- tăng ngưỡng để kéo không bị tính click
+local pressedPos
+local isDragClick = false
+
+local function update(input)
+    local delta = input.Position - dragStart
+    nut1.Position = UDim2.new(
+        startPos.X.Scale, startPos.X.Offset + delta.X,
+        startPos.Y.Scale, startPos.Y.Offset + delta.Y
+    )
+end
+
+nut1.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = nut1.Position
+        pressedPos = input.Position
+        isDragClick = false
+    end
+end)
+
+nut1.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+        if dragging and pressedPos and (input.Position - pressedPos).Magnitude > clickThreshold then
+            isDragClick = true
+        end
+    end
+end)
+
+nut1.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+        if not isDragClick then
+            local show = not ui2.Visible
+            ui2.Visible = show
+            ui3.Visible = show
+            blur.Size = show and 12 or 0
+        end
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
+end)
+
+ui3.Active = true
+ui3.Selectable = true
+local dragging3, dragStart3, startPos3, dragInput3
+
+local function update3(input)
+    local delta = input.Position - dragStart3
+    ui3.Position = UDim2.new(
+        startPos3.X.Scale, startPos3.X.Offset + delta.X,
+        startPos3.Y.Scale, startPos3.Y.Offset + delta.Y
+    )
+end
+
+ui3.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragging3 = true
+        dragStart3 = input.Position
+        startPos3 = ui3.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging3 = false
+            end
+        end)
+    end
+end)
+
+ui3.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput3 = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput3 and dragging3 then
+        update3(input)
+    end
+end)
+
+ui2.Active = true
+ui2.Selectable = true
+local dragging2, dragStart2, startPos2, dragInput2
+
+local function update2(input)
+    local delta = input.Position - dragStart2
+    ui2.Position = UDim2.new(
+        startPos2.X.Scale, startPos2.X.Offset + delta.X,
+        startPos2.Y.Scale, startPos2.Y.Offset + delta.Y
+    )
+end
+
+ui2.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragging2 = true
+        dragStart2 = input.Position
+        startPos2 = ui2.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging2 = false
+            end
+        end)
+    end
+end)
+
+ui2.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput2 = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput2 and dragging2 then
+        update2(input)
+    end
+end)
+
+local StarterGui = game:GetService("StarterGui")
+local profileUrl = ("https://www.roblox.com/users/%d/profile"):format(p.UserId)
+
+copyBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(input.Text)
+        StarterGui:SetCore("SendNotification", {
+            Title = "Copied Text to Clipboard",
+            Text = input.Text,
+            Duration = 3,
+            Button1 = "Okay"
+        })
+    end
+end)
+
+jobButton.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(game.JobId)
+        StarterGui:SetCore("SendNotification", {
+            Title = "Copied JobId to Clipboard",
+            Text = game.JobId,
+            Duration = 3,
+            Button1 = "Okay"
+        })
+    end
+end)
+
+avatarBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(profileUrl)
+        StarterGui:SetCore("SendNotification", {
+            Title = "Copied Profile Link to Clipboard",
+            Text = profileUrl,
+            Duration = 3,
+            Button1 = "Okay"
+        })
+    end
+end)
+
+
+
+lowSetBtn.MouseButton1Click:Connect(function()
+    local src = game:HttpGet("https://raw.githubusercontent.com/Nsama239/lowset/refs/heads/main/lowset")
+    loadstring(src)()
+    StarterGui:SetCore("SendNotification", {
+        Title = "Low Set",
+        Text = "Applied Low Set",
+        Duration = 3,
+    })
+end)
+
+fpsBox.FocusLost:Connect(function()
+    local n = tonumber(fpsBox.Text)
+
+
+    if setfpscap and n and n > 0 then
+        setfpscap(n)
+        StarterGui:SetCore("SendNotification", {
+            Title = "setfpscap",
+            Text = "fps limit "..n.."now",
+            Duration = 3,
+            Button1 = "Okay"
+        })
+    else
+        fpsBox.Text = "240"
+    end
+end)
+
+-- No Render toggle
+local toggleRender
+toggleRender = function()
+    renderOn = not renderOn
+    RS:Set3dRenderingEnabled(renderOn)
+    noRenderBtn.Text = renderOn and "No Render: OFF" or "No Render: ON"
+    StarterGui:SetCore("SendNotification", {
+        Title = "No Render",
+        Text = renderOn and "No Render: OFF" or "No Render: ON",
+        Duration = 3,
+        Button1 = "Okay",
+    })
+end
+
+noRenderBtn.MouseButton1Click:Connect(toggleRender)
+
+joinBtn.MouseButton1Click:Connect(function()
+    local targetJob = input.Text:match("%S+")
+    if targetJob and #targetJob > 0 then
+        StarterGui:SetCore("SendNotification", {
+            Title = p.Name,
+            Text = "Joining JobId: "..targetJob,
+            Duration = 3,
+            Button1 = "Okay"
+        })
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, targetJob, p)
+    end
+end)
