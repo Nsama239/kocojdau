@@ -1,5 +1,5 @@
 local Config = {
-    Fpscap   = 240,     -- nil hoặc số >0, sẽ setfpscap nếu có hàm setfpscap
+    Fpscap   = 120,     -- nil hoặc số >0, sẽ setfpscap nếu có hàm setfpscap
     Lowset   = false,   -- true => tự động chạy lowset khi load
     Hidemap  = false,   -- true => tự động bật hide map (applyHide)
     Norender = false,   -- true => tắt 3D render ngay khi load
@@ -8,7 +8,7 @@ local Config = {
 -- Lấy Config từ getgenv().Config hoặc biến Config có sẵn, nếu không thì dùng DEFAULT_CONFIG
 local Config = getgenv and getgenv().Config
 -- Bổ sung các key thiếu bằng giá trị mặc định
-for k, v in pairs(DEFAULT_CONFIG) do
+for k, v in pairs(Config) do
     if Config[k] == nil then Config[k] = v end
 end
 -- ui1
