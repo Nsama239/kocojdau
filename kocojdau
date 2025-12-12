@@ -1,3 +1,16 @@
+local DEFAULT_CONFIG = {
+    Fpscap   = 240,
+    Lowset   = false,
+    Hidemap  = false,
+    Norender = false,
+    EnableUi = true,
+}
+-- Lấy Config từ getgenv().Config hoặc biến Config có sẵn, nếu không thì dùng DEFAULT_CONFIG
+local Config = getgenv and getgenv().Config or _G.Config or DEFAULT_CONFIG
+-- Bổ sung các key thiếu bằng giá trị mặc định
+for k, v in pairs(DEFAULT_CONFIG) do
+    if Config[k] == nil then Config[k] = v end
+end
 -- ui1
 local Players = game:GetService("Players")
 local p = Players.LocalPlayer
