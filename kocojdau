@@ -5,7 +5,7 @@ local queue = queue_on_teleport
 
 if Config.AttachNextQueue and queue then
     queue([[
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/your/repo/main/hehe.lua"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Nsama239/kocojdau/refs/heads/main/kocojdau"))()
     ]])
 end
 -- ui1
