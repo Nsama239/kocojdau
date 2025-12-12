@@ -1,16 +1,25 @@
-local Config = {
-    Fpscap   = 120,     -- nil hoặc số >0, sẽ setfpscap nếu có hàm setfpscap
-    Lowset   = false,   -- true => tự động chạy lowset khi load
-    Hidemap  = false,   -- true => tự động bật hide map (applyHide)
-    Norender = false,   -- true => tắt 3D render ngay khi load
-    EnableUi = true,    -- true => UI2/UI3 hiện ngay khi load
+-- Mặc định nếu không truyền Config từ ngoài
+local DEFAULT_CONFIG = {
+    Fpscap   = 120,
+    Lowset   = false,
+    Hidemap  = false,
+    Norender = false,
+    EnableUi = true,
 }
--- Lấy Config từ getgenv().Config hoặc biến Config có sẵn, nếu không thì dùng DEFAULT_CONFIG
-local Config = getgenv and getgenv().Config
--- Bổ sung các key thiếu bằng giá trị mặc định
-for k, v in pairs(Config) do
-    if Config[k] == nil then Config[k] = v end
+
+-- Ưu tiên lấy Config do người gọi gán (getgenv/_G), nếu không có thì dùng DEFAULT_CONFIG
+local Config = (getgenv and getgenv().Config) or _G.Config
+if Config then
+    -- Ghép thêm key còn thiếu từ DEFAULT_CONFIG (tránh nil)
+    for k, v in pairs(DEFAULT_CONFIG) do
+        if Config[k] == nil then
+            Config[k] = v
+        end
+    end
+else
+    Config = DEFAULT_CONFIG
 end
+
 -- ui1
 local Players = game:GetService("Players")
 local p = Players.LocalPlayer
