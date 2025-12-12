@@ -1,13 +1,3 @@
--- Auto queue lại script khi sang server mới
-local queue = queue_on_teleport
-    or (syn and syn.queue_on_teleport)
-    or (fluxus and fluxus.queue_on_teleport)
-
-if Config.AttachNextQueue and queue then
-    queue([[
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Nsama239/kocojdau/refs/heads/main/kocojdau"))()
-    ]])
-end
 -- ui1
 local Players = game:GetService("Players")
 local p = Players.LocalPlayer
@@ -734,3 +724,5 @@ joinBtn.MouseButton1Click:Connect(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, targetJob, p)
     end
 end)
+
+
